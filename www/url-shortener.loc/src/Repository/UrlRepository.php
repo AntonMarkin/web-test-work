@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Url;
+use DateTimeImmutable;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -26,6 +27,24 @@ class UrlRepository extends ServiceEntityRepository
             ->setParameter('val', $value)
             ->getQuery()
             ->getOneOrNullResult()
+        ;
+    }
+    public function findAllYoungerThanDate(DateTimeImmutable $date): array
+    {
+        return $this->createQueryBuilder('u')
+            ->andWhere('u.createdDate > :date')
+            ->setParameter('date', $date)
+            ->orderBy('u.createdDate', 'DESC')
+            ->getQuery()
+            ->getResult()
+        ;
+    }
+    public function findAllForStats(): array
+    {
+        return $this->createQueryBuilder('u')
+            ->orderBy('u.createdDate', 'DESC')
+            ->getQuery()
+            ->getResult()
         ;
     }
 }

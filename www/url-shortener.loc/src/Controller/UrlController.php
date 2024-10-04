@@ -3,7 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Url;
-use App\Repository\UrlRepository;
+use App\Service\UrlManager;
 use DateInterval;
 use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -27,7 +27,6 @@ class UrlController extends AbstractController
 
         $entityManager = $this->getDoctrine()->getManager();
         $urlRepository = $entityManager->getRepository(Url::class);
-        $urlEntity = new Url();
 
         if (!empty($url = $urlRepository->findOneBy(['url' => $path]))) {
             if (empty ($url->getExpiredDate()) || $url->getExpiredDate() < new DateTimeImmutable()) {
@@ -40,10 +39,9 @@ class UrlController extends AbstractController
                 'expired_date' => $url->getExpiredDate()
             ]);
         }
-
-        $urlEntity->setExpiredDate($expiredDate);
-        $urlEntity->setUrl($path);
-        $url = $urlEntity;
+        $url = new Url();
+        $url->setExpiredDate($expiredDate);
+        $url->setUrl($path);
 
         $entityManager->persist($url);
         $entityManager->flush();
@@ -57,10 +55,10 @@ class UrlController extends AbstractController
     /**
      * @Route("/decode-url", name="decode_url")
      */
-    public function decodeUrl(Request $request): JsonResponse
+    public function decodeUrl(Request $request, UrlManager $urlManager): JsonResponse
     {
         try {
-            $url = $this->getDecodedUrl($request->get('hash'));
+            $url = $urlManager->getDecodedUrl($request->get('hash'));
         } catch (\Exception $e) {
             return $this->json([
                 'error' => $e->getMessage()
@@ -73,30 +71,15 @@ class UrlController extends AbstractController
     /**
      * @Route("/move-to-url", name="move_to_url")
      */
-    public function moveToUrl(Request $request): Response
+    public function moveToUrl(Request $request, UrlManager $urlManager): Response
     {
         try {
-            $url = $this->getDecodedUrl($request->get('hash'));
+            $url = $urlManager->getDecodedUrl($request->get('hash'));
         } catch (\Exception $e) {
             return $this->json([
                 'error' => $e->getMessage()
             ]);
         }
         return $this->redirect($url->getUrl());
-    }
-
-    private function getDecodedUrl(string $hash): ?Url
-    {
-        /** @var UrlRepository $urlRepository */
-        $urlRepository = $this->getDoctrine()->getRepository(Url::class);
-        $url =  $urlRepository->findOneByHash($hash);
-
-        if (empty ($url)) {
-            throw new \Exception('Non-existent hash.');
-        }
-        if (empty ($url->getExpiredDate()) || $url->getExpiredDate() < new DateTimeImmutable()) {
-            throw new \Exception("Url's lifespan has expired.");
-        }
-        return $url;
     }
 }
