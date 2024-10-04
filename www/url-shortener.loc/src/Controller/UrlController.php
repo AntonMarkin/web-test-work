@@ -15,14 +15,19 @@ class UrlController extends AbstractController
     /**
      * @Route("/encode-url", name="encode_url")
      */
-    public function encodeUrl(Request $request): JsonResponse
+    public function encodeUrl(UrlRepository $urlRepository, Request $request): JsonResponse
     {
-        $url = new Url();
-        $url->setUrl($request->get('url'));
+        $path = $request->get('url');
+        $urlEntity = new Url();
 
-        $entityManager = $this->getDoctrine()->getManager();
-        $entityManager->persist($url);
-        $entityManager->flush();
+        if (empty($url = $urlRepository->findOneBy(['url' => $path]))) {
+            $urlEntity->setUrl($path);
+            $url = $urlEntity;
+
+            $entityManager = $this->getDoctrine()->getManager();
+            $entityManager->persist($url);
+            $entityManager->flush();
+        }
 
         return $this->json([
             'hash' => $url->getHash()
