@@ -10,6 +10,8 @@ use Doctrine\ORM\Mapping as ORM;
  */
 class Url
 {
+    public const ENCODED_URL_LIFESPAN = 30;
+
     /**
      * @ORM\Id
      * @ORM\GeneratedValue
@@ -31,6 +33,11 @@ class Url
      * @ORM\Column(name="created_date", type="datetime_immutable")
      */
     private $createdDate;
+
+    /**
+     * @ORM\Column(name="expired_date", type="datetime", nullable=true)
+     */
+    private $expiredDate;
 
     public function __construct()
     {
@@ -76,6 +83,18 @@ class Url
     public function setCreatedDate(\DateTimeImmutable $createdDate): self
     {
         $this->createdDate = $createdDate;
+
+        return $this;
+    }
+
+    public function getExpiredDate(): ?\DateTimeInterface
+    {
+        return $this->expiredDate;
+    }
+
+    public function setExpiredDate(?\DateTimeInterface $expiredDate): self
+    {
+        $this->expiredDate = $expiredDate;
 
         return $this;
     }
