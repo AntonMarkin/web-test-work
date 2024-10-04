@@ -7,6 +7,7 @@ use App\Repository\UrlRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 class UrlController extends AbstractController
@@ -33,9 +34,7 @@ class UrlController extends AbstractController
      */
     public function decodeUrl(Request $request): JsonResponse
     {
-        /** @var UrlRepository $urlRepository */
-        $urlRepository = $this->getDoctrine()->getRepository(Url::class);
-        $url = $urlRepository->findOneByHash($request->get('hash'));
+        $url = $this->getUrlByHash($request->get('hash'));
         if (empty ($url)) {
             return $this->json([
                 'error' => 'Non-existent hash.'
@@ -44,5 +43,25 @@ class UrlController extends AbstractController
         return $this->json([
             'url' => $url->getUrl()
         ]);
+    }
+    /**
+     * @Route("/move-to-url", name="move_to_url")
+     */
+    public function moveToUrl(Request $request): Response
+    {
+        $url = $this->getUrlByHash($request->get('hash'));
+        if (empty ($url)) {
+            return $this->json([
+                'error' => 'Non-existent hash.'
+            ]);
+        }
+        return $this->redirect($url->getUrl());
+    }
+
+    private function getUrlByHash(string $hash): ?Url
+    {
+        /** @var UrlRepository $urlRepository */
+        $urlRepository = $this->getDoctrine()->getRepository(Url::class);
+        return $urlRepository->findOneByHash($hash);
     }
 }
