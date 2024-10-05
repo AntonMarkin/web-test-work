@@ -57,11 +57,13 @@ class UpdateStatsDataCommand extends Command
             $io->info('There are no new urls to send.');
             return Command::SUCCESS;
         }
-
-        $serviceField->setValue($urlData[0]->getCreatedDate()->format('Y-m-d H:i:s'));
+        foreach ($urlData as &$url) {
+            $url['createdDate'] = $url['createdDate']->format('Y-m-d H:i:s');
+        }
+        $serviceField->setValue($urlData[0]['createdDate']);
 
         try {
-            $response = $this->client->request('POST', $this->statsEndpoint, ['json' => $urlData]);
+            $response = $this->client->request('POST', $this->statsEndpoint, ['json' => ['urls' => $urlData]]);
             if ($response->getStatusCode() !== 200) {
                 throw new \Exception('HTTP error ' . $response->getStatusCode());
             }

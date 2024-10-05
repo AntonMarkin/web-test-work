@@ -32,6 +32,7 @@ class UrlRepository extends ServiceEntityRepository
     public function findAllYoungerThanDate(DateTimeImmutable $date): array
     {
         return $this->createQueryBuilder('u')
+            ->select('u.url', 'u.createdDate')
             ->andWhere('u.createdDate > :date')
             ->setParameter('date', $date)
             ->orderBy('u.createdDate', 'DESC')
@@ -42,6 +43,7 @@ class UrlRepository extends ServiceEntityRepository
     public function findAllForStats(): array
     {
         return $this->createQueryBuilder('u')
+            ->select('u.url', 'u.createdDate')
             ->orderBy('u.createdDate', 'DESC')
             ->getQuery()
             ->getResult()

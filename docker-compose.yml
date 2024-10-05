@@ -1,6 +1,6 @@
 version: '3'
 services:
-    unigine_test_nginx:
+    nginx:
         image: nginx:latest
         ports:
             - "80:80"
@@ -10,14 +10,15 @@ services:
             - ./www:/var/www
             - ./logs/nginx:/var/log/nginx
         links:
-            - unigine_test_php
-    unigine_test_php:
+            - url_shortener_php
+            - url_statistic_php
+    url_shortener_php:
         build: ./images/php
         links:
-            - unigine_test_mysql
+            - url_shortener_mysql
         volumes:
-            - ./www:/var/www
-    unigine_test_mysql:
+            - ./www/url-shortener.loc:/var/www/url-shortener.loc
+    url_shortener_mysql:
         image: mariadb:latest
         ports:
             - "3306:3306"
@@ -30,5 +31,26 @@ services:
         environment:
             MYSQL_ROOT_PASSWORD: root
             MYSQL_DATABASE: url_shortener
+            MYSQL_USER: user
+            MYSQL_PASSWORD: user
+    url_statistic_php:
+        build: ./images/php
+        links:
+            - url_statistic_mysql
+        volumes:
+            - ./www/url-statistic.loc:/var/www/url-statistic.loc
+    url_statistic_mysql:
+        image: mariadb:latest
+        ports:
+            - "3360:3306"
+        volumes:
+            - ./etc/mysql:/etc/mysql
+            - ./logs/mysql:/var/log/mysql
+            - ./mysqli:/var/lib/mysql
+            - ./mysql-files:/var/lib/mysql-files
+            - ./data/url_statistic.sql:/docker-entrypoint-initdb.d/dump.sql
+        environment:
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_DATABASE: url_statistic
             MYSQL_USER: user
             MYSQL_PASSWORD: user
