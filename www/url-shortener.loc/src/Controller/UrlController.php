@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Url;
+use App\Service\Request\UrlRequest;
 use App\Service\UrlManager;
 use DateInterval;
 use DateTimeImmutable;
@@ -17,10 +18,11 @@ class UrlController extends AbstractController
     /**
      * @Route("/encode-url", name="encode_url")
      */
-    public function encodeUrl(Request $request): JsonResponse
+    public function encodeUrl(UrlRequest $request): JsonResponse
     {
-        $path = $request->get('url');
-        $lifespan = $request->get('lifespan') ?? Url::ENCODED_URL_LIFESPAN;
+        $request->validate();
+        $path = $request->getUrl();
+        $lifespan = $request->getLifespan() ?? Url::ENCODED_URL_LIFESPAN;
 
         $date = new DateTimeImmutable();
         $expiredDate = $date->add(new DateInterval("P{$lifespan}D"));
@@ -55,10 +57,11 @@ class UrlController extends AbstractController
     /**
      * @Route("/decode-url", name="decode_url")
      */
-    public function decodeUrl(Request $request, UrlManager $urlManager): JsonResponse
+    public function decodeUrl(UrlRequest $request, UrlManager $urlManager): JsonResponse
     {
+        $request->validate();
         try {
-            $url = $urlManager->getDecodedUrl($request->get('hash'));
+            $url = $urlManager->getDecodedUrl($request->getHash());
         } catch (\Exception $e) {
             return $this->json([
                 'error' => $e->getMessage()
@@ -71,10 +74,11 @@ class UrlController extends AbstractController
     /**
      * @Route("/move-to-url", name="move_to_url")
      */
-    public function moveToUrl(Request $request, UrlManager $urlManager): Response
+    public function moveToUrl(UrlRequest $request, UrlManager $urlManager): Response
     {
+        $request->validate();
         try {
-            $url = $urlManager->getDecodedUrl($request->get('hash'));
+            $url = $urlManager->getDecodedUrl($request->getHash());
         } catch (\Exception $e) {
             return $this->json([
                 'error' => $e->getMessage()

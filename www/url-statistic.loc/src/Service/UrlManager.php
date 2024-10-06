@@ -5,35 +5,67 @@ namespace App\Service;
 use App\Entity\Url;
 use App\Repository\UrlRepository;
 use DateTimeImmutable;
+use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class UrlManager
 {
+    private $entityManager;
     private $urlRepository;
+    private $validator;
 
-    public function __construct(UrlRepository $urlRepository)
+    public function __construct(ManagerRegistry $doctrine, UrlRepository $urlRepository, ValidatorInterface $validator)
     {
+        $this->entityManager = $doctrine->getManager();
         $this->urlRepository = $urlRepository;
+        $this->validator = $validator;
     }
-    public function getDecodedUrl(string $hash): ?Url
+    public function saveStats($urls): void
     {
-        $url = $this->urlRepository->findOneByHash($hash);
+        foreach ($urls as $url) {
+            $date = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $url['createdDate']);
 
-        if (empty ($url)) {
-            throw new \Exception('Non-existent hash.');
+            $entity = new Url();
+            $entity->setUrl($url['url']);
+            $entity->setCreatedDate($date);
+
+            $errors = $this->validator->validate($entity);
+            if (count($errors) > 0) {
+                throw new \Exception((string) $errors);
+            }
+
+            $this->entityManager->persist($entity);
         }
-        if (empty ($url->getExpiredDate()) || $url->getExpiredDate() < new DateTimeImmutable()) {
-            throw new \Exception("Url's lifespan has expired.");
-        }
-        return $url;
+        $this->entityManager->flush();
     }
-    public function getUrlsInfo(?DateTimeImmutable $date): array
+    public function getStats(?string $domain, ?DateTimeImmutable $dateStart, ?DateTimeImmutable $dateEnd): array
     {
-        if (empty($date)) {
-            $urls = $this->urlRepository->findAllForStats();
-        } else {
-            $urls = $this->urlRepository->findAllYoungerThanDate($date);
-        }
+        $stats = [];
+        $qb = $this->urlRepository->createQueryBuilder('u')
+            ->select('count(distinct u.url)')
+        ;
 
-        return $urls;
+        if(!empty($domain)) {
+            $qb->andWhere('u.url like :domain')
+                ->setParameter('domain', "%{$domain}%")
+            ;
+            $stats['domain'] = $domain;
+        }
+        if(!empty($dateStart) && !empty($dateEnd)) {
+            $dateStart = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $dateStart);
+            $dateEnd = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $dateEnd);
+            $qb->andWhere('u.createdDate > :dateStart')
+                ->andWhere('u.createdDate < :dateEnd')
+                ->setParameter('dateStart', $dateStart)
+                ->setParameter('dateEnd', $dateEnd)
+            ;
+            $stats['interval'] = "{$dateStart} - {$dateEnd}";
+        }
+        $stats['url_count'] = $qb->orderBy('u.url', 'ASC')
+            ->getQuery()
+            ->getSingleScalarResult()
+        ;
+
+        return $stats;
     }
 }

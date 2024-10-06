@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\UrlRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * @ORM\Entity(repositoryClass=UrlRepository::class)
@@ -19,11 +20,18 @@ class Url
 
     /**
      * @ORM\Column(type="string", length=255)
+     *
+     * @Assert\NotBlank
+     * @Assert\Type("string")
      */
     private $url;
 
     /**
      * @ORM\Column(type="datetime")
+     *
+     * @Assert\NotBlank
+     * @Assert\Type("string")
+     * @Assert\DateTime
      */
     private $createdDate;
 

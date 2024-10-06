@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\UrlRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * @ORM\Entity(repositoryClass=UrlRepository::class)
@@ -21,21 +22,36 @@ class Url
 
     /**
      * @ORM\Column(type="string", length=255)
+     *
+     * @Assert\NotBlank
+     * @Assert\Type("string")
      */
     private $url;
 
     /**
      * @ORM\Column(type="string", length=14)
+     *
+     * @Assert\NotBlank
+     * @Assert\Type("string")
+     * @Assert\Length (14)
      */
     private $hash;
 
     /**
      * @ORM\Column(name="created_date", type="datetime_immutable")
+     *
+     * @Assert\NotBlank
+     * @Assert\Type("string")
+     * @Assert\DateTime
      */
     private $createdDate;
 
     /**
      * @ORM\Column(name="expired_date", type="datetime", nullable=true)
+     *
+     * @Assert\NotBlank
+     * @Assert\Type("string")
+     * @Assert\DateTime
      */
     private $expiredDate;
 
